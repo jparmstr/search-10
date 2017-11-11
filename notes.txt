@@ -1,0 +1,108 @@
+            'determine weighted scores for each word
+            'include number of times used, is it in a bigger font, is it in the title, etc
+
+            '1. extract all words from document (remove tags, remove punctuation, words separated by spaces(?))
+            '2. create a forward index
+            '3. the forward index will be named numerically based on the order it was saved in
+            '4. a separate file will contain the original page url of the forward index
+            '5. create a separate, temporary inverted index of the page (sort the forward index by word)
+            '6. merge the index from step 5 into the full inverted index
+            '7. delete the forward index? I don't see any reason to keep that data. all we need is the reference to the original file.
+
+            'modified index format: (1, 3, 16) would mean document 1, word 3, word importance 16 (in the inverted index)
+
+
+
+index format:
+radiohead*0,12,1.21*1,94,10.94*
+
+next step:
+analyze a series of webpages and merge them all into the main inverted index
+
+
+next step:
+find out why words are getting multiple entries from the same refNumber
++problem solved. I was accidentally loading old data from the disk.
+
+next step...
+make it possible to perform queries on the index!
++ just do single-word queries for now
++ return a list of occurences, sorted by word weight
++ list of occurences has refNumber replaced with URL from refList
+
++ SUCCESS!!
+
++ make it possible to perform more searches without restarting - done
+
++ optimize the searching code in both Scan and Merge areas (ie don't just cycle through the entire index)
+	+ done for merging! it takes a fraction of the time to merge now, even with 30,000 words
+	+ scanning still needs to be optimized (takes quite a while with some pages)
+
+- figure out why we're getting lots of zeros at the beginning of the index file
+	- is it related to "" words?
+
++ things are getting fucked up in the search results..
+  maybe we need to write a separate thread to handle updating the inverted index?
+  I dunno, but there's only a 50% chance that a word in a page will give it as a result
+	+ it's because I decided to sort the word list created in Merge without sorting the actual index
+	+ problem solved with awesome new Merge() sorting method!
+
+new goal:
+- optimize the shit out of the code in search analyzer, copy to main project
+	+ very fast binary compare implemented in Merge(), search()
+	- work on possible bug with first and last items in binary merge
+	  (has happened in the main program..)
+	  (may be fixable by eliminating first and second pass if/thens and replacing with
+	    if/thens for if less than index(0) and if greater than index(last)
+	+ work on optimizing the scan code, since merge is very fast now..
+
++ bug: program often crashes when writing out main index
+	+ to fix: create a variable in scheduler called WaitingOnWriteOut or something
+	  when the button is clicked, it's set to true. then scheduler uses its existing
+	  waitForAllThreadsToFinish, performs the writeOutInvertedIndex sub, and sets its flag back to false.
+	+ partially fixed.. idea above was implemented, but now it always crashes at the very end
+	  of the list when writing out.. not anymore as of 1-30-10
+
++ getting random merge fails during scanning in the main program,
+  especially in higher index ranges. one possible cause is the "music note" character
+	+ seemingly fixed. it was just because I disabled the inUse thing I made for the merge process
+
+then..
+make it possible to perform multiple-word queries
+- same general method as single-word queries
+- index number also taken into account, if it appears near (within 10 words?) another word specified
+	- but right now we don't keep track of all the indexes in a document, only the first...
+	  to add this feature we may have to make every page use multiInfoWords,
+	  or even worse create a new class with just lots of index values to avoid wasting data.
+	  probably it's just too much work to implement that feature though.
+	  I think that the word weights may do enough to approximate the importance.
+	  if not, we can always re-download the page or something when it's an important search result.
+- or, just return every single word query, then filter that list by what documents they have in common
+- the final results can be sorted by how close the words are together, and their weight in the page
+
++ is it possible to just reverse-engineer the page text from the inverted index?
+  this would eliminate the need to store every downloaded page while still giving the ability to show
+  the context of the searched word like google does.
+	+ this would need to be done by searching the index for every reference number that matches
+	  a certain one, then sorting the resulting list of words by their index number,
+	  then placing that data in the HTML search results
+	- LARGE PROBLEM. when words are added, it's only with their first index number.
+	  to do this successfully, we need to either add a new info set for each occurence,
+	  OR make listOfWordMultiInfo contain a list(of integer) for index value..
+	  the second option would help the search process from not returning duplicates
+
+- FULL REWRITE is needed
+	+ merge search multi-thread and search analyzer into one big project
+	+ 10 spider threads instead of 5
+	+ clarify and simplify code where needed (inconsistent variable names, for one)
+	+ fixed bug where you couldn't search for the same word twice
+	- fix the problem mentioned above by making WordMultiInfo able to contain a list of indexes
+	  - the format for writing out and loading the InvIndex will have to be redone also
+	  + quick/hacky fix: duplicate words in a page are now being kept, resulting in lots of entries
+	    for common words containing repeated data about Weight, RefNumber, along with the Indexes.
+	    this was done by disabling a single if/then in createTempInvertedIndex
+
+
+
+
+
