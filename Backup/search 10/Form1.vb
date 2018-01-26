@@ -289,8 +289,6 @@ Public Class Form1
         End Sub
 
         Public Sub runThreads()
-            If linkList Is Nothing Then Exit Sub
-            If linkList.Count <= 0 Then Exit Sub
             masterDomain = LCase(getDomain(linkList(linkListPosition)))
             masterDomainNoWWW = masterDomain.Replace("http://", "")
             masterDomainNoWWW = masterDomainNoWWW.Replace("www.", "")
@@ -2080,7 +2078,7 @@ Public Class Form1
                     snipEnd = InStr(snipStart, workingText, "*")
                     snipLen = snipEnd - snipStart
 
-                    If snipLen > 0 Then workingWordInfoOnly.weight = CDbl(Mid(workingText, snipStart, snipLen))
+                    workingWordInfoOnly.weight = CDbl(Mid(workingText, snipStart, snipLen))
 
                     workingWord.infoList.Add(workingWordInfoOnly)
                 End While
@@ -2161,7 +2159,7 @@ Public Class Form1
                     snipEnd = InStr(snipStart, workingText, "*")
                     snipLen = snipEnd - snipStart
 
-                    If snipLen > 0 Then workingWordInfoOnly.weight = CDbl(Mid(workingText, snipStart, snipLen))
+                    workingWordInfoOnly.weight = CDbl(Mid(workingText, snipStart, snipLen))
 
                     workingWord.infoList.Add(workingWordInfoOnly)
                 End While
